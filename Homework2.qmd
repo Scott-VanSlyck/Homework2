@@ -1,0 +1,205 @@
+---
+title: "Rprogram"
+format: html
+editor: visual
+---
+### Task 1:Basic Vector practice
+
+Pre and post treatment blood pressure values
+```{r}
+pre_bp = c(130, 128, 116, 124, 133, 134, 118, 126, 114, 127, 141, 138, 128, 140, 137, 131, 120, 128, 139, 135)
+
+post_bp = c(114, 98, 113, 99, 107, 116, 113, 111, 119, 117, 101, 119, 130, 122, 106, 106, 124, 102, 117, 113)
+```
+
+Assigning subject names for both pre and post treatment vectors
+```{r}
+patient = paste("Subject", 1:20, sep = "_")
+
+names(pre_bp) = patient
+
+names(post_bp) = patient
+```
+
+Calculating blood pressure change from pre to post treatment
+```{r}
+diff_bp = post_bp - pre_bp
+```
+
+Finding the mean average change in blood pressure (negative means lower post treatment compared to pre treatment)
+```{r}
+average_decrease = mean(diff_bp)
+```
+
+Seeing what subjects blood pressure decreased
+```{r}
+decrease = which(diff_bp < 0)
+
+decrease_subjects = names(diff_bp)[decrease]
+
+decrease_subjects
+```
+
+Seeing blood pressure increases post treatment
+```{r}
+positive = diff_bp[diff_bp > 0]
+
+average_positive = mean(positive)
+
+average_positive
+```
+
+
+### Task 2: Basic Data Frame practice
+1. Created dataframe with four columns to represent data
+```{r}
+bp_df = data.frame(patient, pre_bp, post_bp, diff_bp)
+rownames(bp_df) = 1:20
+bp_df
+```
+
+2. Creating a subset of the data where the column diff_bp is only negative
+```{r}
+subset(bp_df, diff_bp < 0)
+```
+
+3. Adding a column that responds with TRUE if post treatment blood pressure is less than 120
+```{r}
+bp_df$lowpost_bp = bp_df$post_bp < 120
+bp_df
+```
+
+4. Printing the dataframe
+```{r}
+knitr::kable(bp_df)
+```
+
+### Task 3: List practice
+
+1. New data frame for placebo data
+```{r}
+pre_bp_placebo = c(138, 135, 147, 117, 152, 134, 114, 121, 131, 130)
+
+post_bp_placebo = c(105, 136, 123, 130, 134, 143, 135, 139, 120, 124)
+
+placebo_df = data.frame(pre_bp_placebo, post_bp_placebo)
+
+placebo_df
+```
+
+2. Creating a list with both dataframes
+```{r}
+experiments = list(treatment = bp_df, placebo = placebo_df)
+
+experiments
+```
+
+3. 3 different ways to access the first list element
+```{r}
+experiments$treatment
+
+experiments[[1]]
+
+experiments[["treatment"]]
+```
+
+4. Accessing pre blood pressure column from placebo data frame
+```{r}
+experiments$placebo$pre_bp_placebo
+```
+
+### Task 4: Control Flow Practice
+
+1. Creating the status column
+```{r}
+experiments$treatment$status <- character(20)
+experiments$placebo$status <- character(10)
+```
+
+2,3. Creating the if/then logic statement to characterize post-treatment blood pressure for both dataframes
+```{r}
+for (i in 1:nrow(experiments$treatment)) {
+  bp = experiments$treatment$post_bp[i]
+  if (bp <= 120) {
+    experiments$treatment$status[i] = "optimal"
+  } else if (bp > 120 & bp <= 130) {
+    experiments$treatment$status[i] = "borderline"
+  } else {
+    experiments$treatment$status[i] = "high"
+  }
+}
+
+for (i in 1:nrow(experiments$placebo)) {
+  bp = experiments$placebo$post_bp_placebo[i]
+  if (bp <= 120) {
+    experiments$placebo$status[i] = "optimal"
+  } else if (bp > 120 & bp <= 130) {
+    experiments$placebo$status[i] = "borderline"
+  } else {
+    experiments$placebo$status[i] = "high"
+  }
+}
+
+experiments
+```
+
+### Task 5: Function Writing
+
+1. Creating the statistical calculations function
+```{r}
+stat_calc = function(experiments, stat = "mean"){
+  my_fun = get(stat)
+  
+  experiments$treatment$diff = experiments$treatment$post_bp - experiments$treatment$pre_bp
+  experiments$placebo$diff = experiments$placebo$post_bp_placebo - experiments$placebo$pre_bp_placebo
+  
+  # Calculating stats for each column
+  treatment_pre = my_fun(experiments$treatment$pre_bp)
+  treatment_post = my_fun(experiments$treatment$post_bp)
+  treatment_diff = my_fun(experiments$treatment$diff)
+  
+  placebo_pre = my_fun(experiments$placebo$pre_bp_placebo)
+  placebo_post = my_fun(experiments$placebo$post_bp_placebo)
+  placebo_diff = my_fun(experiments$placebo$diff)
+  
+  # Create meaningful names for the results
+  result_names = c(
+    paste0(stat, "_treatment_pre"),
+    paste0(stat, "_treatment_post"),
+    paste0(stat, "_treatment_diff"),
+    paste0(stat, "_placebo_pre"),
+    paste0(stat, "_placebo_post"),
+    paste0(stat, "_placebo_diff")
+  )
+  
+   # Create a named vector for the results
+  result_values = c(
+    treatment_pre,
+    treatment_post,
+    treatment_diff,
+    placebo_pre,
+    placebo_post,
+    placebo_diff
+  )
+  
+  names(result_values) = result_names
+  
+  # Return the named vector
+  return(result_values)
+}
+
+stats_mean = stat_calc(experiments)
+stats_mean
+
+stats_var = stat_calc(experiments, "var")
+stats_var
+
+stats_sd = stat_calc(experiments, "sd")
+stats_sd
+
+stats_min = stat_calc(experiments, "min")
+stats_min
+
+stats_max = stat_calc(experiments, "max")
+stats_max
+```
